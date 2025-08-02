@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const RoomManager = require('./roomManager');
 const GameLogic = require('./gameLogic');
@@ -10,13 +11,21 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:8080",
+    origin: ["http://localhost:8080", "https://stop-game-frontend.onrender.com"],
     methods: ["GET", "POST"]
   }
 });
 
 app.use(cors());
 app.use(express.json());
+
+// Servir arquivos estáticos do frontend
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Para rotas SPA - sempre retornar index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+});
 
 const roomManager = new RoomManager();
 const gameLogic = new GameLogic();
