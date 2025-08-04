@@ -1,111 +1,204 @@
-const express = require('express'); const { createServer } = require('http'); const { Server } = require('socket.io'); const cors = require('cors'); const path = require('path'); const RoomManager = require('./roomManager'); const GameLogic = require('./gameLogic');
+const express = require('express');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const path = require('path');
+const RoomManager = require('./roomManager');
+const GameLogic = require('./gameLogic');
 
-const app = express(); const server = createServer(app);
+const app = express();
+const server = createServer(app);
 
-// Simplified CORS app.use(cors());
+app.use(cors());
+app.use(express.static(path.join(__dirname, '../dist')));
 
-// Serve static files from the React build app.use(express.static(path.join(__dirname, '../dist')));
-
-const io = new Server(server, { cors: { origin: "*", methods: ['GET', 'POST'] } });
-
-const roomManager = new RoomManager(); const gameLogic = new GameLogic();
-
-// Health check endpoint app.get('/health', (req, res) => { res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() }); });
-
-// Serve React app for all remaining routes (wildcard route must be named for Express 5) app.get('/*path', (req, res) => { res.sendFile(path.join(__dirname, '../dist/index.html')); });
-
-// Socket.IO connection handling io.on('connection', (socket) => { console.log('User connected:', socket.id);
-
-socket.on('createRoom', (data) => { const { playerName } = data; const roomId = Math.random().toString(36).substring(2, 8).toUpperCase(); const room = roomManager.createRoom(roomId); const player = { id: socket.id, name: playerName, score: 0, answers: {}, isReady: false }; room.players.push(player); room.hostId = socket.id;
-
-socket.join(roomId);
-socket.emit('roomCreated', { roomId, room });
-console.log(`Room ${roomId} created by ${playerName}`);
-
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ['GET', 'POST']
+  }
 });
 
-socket.on('joinRoom', (data) => { const { roomId, playerName } = data; try { const player = { id: socket.id, name: playerName, score: 0, answers: {}, isReady: false }; const room = roomManager.joinRoom(roomId, player);
+const roomManager = new RoomManager();
+const gameLogic = new GameLogic();
 
-socket.join(roomId);
-  socket.emit('joinedRoom', { roomId, playerId: socket.id, room });
-  io.to(roomId).emit('roomUpdated', { players: room.players, gameState: room.gameState, currentRound: room.currentRound });
-  console.log(`${playerName} joined room ${roomId}`);
-} catch (error) {
-  console.error(`Error joining room: ${error.message}`);
-  socket.emit('error', { message: error.message });
-}
-
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-socket.on('startRound', (data) => { const { roomId } = data; try { const room = roomManager.getRoom(roomId); if (room && room.hostId === socket.id) { const letter = gameLogic.getRandomLetter(); const roundData = roomManager.startRound(roomId, letter); io.to(roomId).emit('roundStarted', roundData);
+// 🚨 Correção aqui: rota wildcard nomeada
+app.get('/*path', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
-// Start timer
-    let timeLeft = 60;
-    const timer = setInterval(() => {
-      timeLeft--;
-      io.to(roomId).emit('timeUpdate', { timeLeft });
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
 
-      if (timeLeft <= 0) {
-        clearInterval(timer);
+  socket.on('createRoom', (data) => {
+    const { playerName } = data;
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const room = roomManager.createRoom(roomId);
+    const player = { id: socket.id, name: playerName, score: 0, answers: {}, isReady: false };
+    room.players.push(player);
+    room.hostId = socket.id;
+
+    socket.join(roomId);
+    socket.emit('roomCreated', { roomId, room });
+    console.log(`Room ${roomId} created by ${playerName}`);
+  });
+
+  socket.on('joinRoom', (data) => {
+    const { roomId, playerName } = data;
+    try {
+      const player = { id: socket.id, name: playerName, score: 0, answers: {}, isReady: false };
+      const room = roomManager.joinRoom(roomId, player);
+      socket.join(roomId);
+      socket.emit('joinedRoom', { roomId, playerId: socket.id, room });
+      io.to(roomId).emit('roomUpdated', {
+        players: room.players,
+        gameState: room.gameState,
+        currentRound: room.currentRound
+      });
+      console.log(`${playerName} joined room ${roomId}`);
+    } catch (error) {
+      console.error(`Error joining room: ${error.message}`);
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('startRound', (data) => {
+    const { roomId } = data;
+    try {
+      const room = roomManager.getRoom(roomId);
+      if (room && room.hostId === socket.id) {
+        const letter = gameLogic.getRandomLetter();
+        const roundData = roomManager.startRound(roomId, letter);
+        io.to(roomId).emit('roundStarted', roundData);
+
+        let timeLeft = 60;
+        const timer = setInterval(() => {
+          timeLeft--;
+          io.to(roomId).emit('timeUpdate', { timeLeft });
+
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            const endData = roomManager.endRound(roomId);
+            io.to(roomId).emit('roundEnded', endData);
+          }
+        }, 1000);
+
+        room.timer = timer;
+      }
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('submitAnswers', (data) => {
+    const { roomId, answers } = data;
+    try {
+      roomManager.submitAnswers(roomId, socket.id, answers);
+      const room = roomManager.getRoom(roomId);
+      io.to(roomId).emit('roomUpdated', room);
+
+      const player = room.players.find(p => p.id === socket.id);
+      if (player && player.finished) {
+        io.to(roomId).emit('playerFinished', {
+          playerId: socket.id,
+          playerName: player.name
+        });
+      }
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('stopPressed', (data) => {
+    const { roomId } = data;
+    try {
+      const room = roomManager.getRoom(roomId);
+      if (room && room.timer) {
+        clearInterval(room.timer);
         const endData = roomManager.endRound(roomId);
+        io.to(roomId).emit('gameForceEnded', {
+          playerId: socket.id,
+          playerName: room.players.find(p => p.id === socket.id)?.name
+        });
         io.to(roomId).emit('roundEnded', endData);
       }
-    }, 1000);
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
 
-    room.timer = timer;
-  }
-} catch (error) {
-  socket.emit('error', { message: error.message });
-}
+  socket.on('voteWord', (data) => {
+    const { roomId, playerId, category, vote } = data;
+    try {
+      roomManager.voteWord(roomId, playerId, category, vote);
+      const room = roomManager.getRoom(roomId);
+      io.to(roomId).emit('roomUpdated', room);
 
+      if (roomManager.allVotesComplete(roomId)) {
+        const scores = gameLogic.calculateScores(room);
+        roomManager.updateScores(roomId, scores);
+        io.to(roomId).emit('scoresCalculated', { scores });
+      }
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('updateCategories', (data) => {
+    const { roomId, categories } = data;
+    try {
+      const room = roomManager.getRoom(roomId);
+      if (room && room.hostId === socket.id) {
+        roomManager.updateCategories(roomId, categories);
+        io.to(roomId).emit('categoriesUpdated', { categories });
+        io.to(roomId).emit('roomUpdated', roomManager.getRoom(roomId));
+      }
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('chatMessage', (data) => {
+    const { roomId, message } = data;
+    try {
+      const room = roomManager.getRoom(roomId);
+      const player = room?.players.find(p => p.id === socket.id);
+      if (player) {
+        io.to(roomId).emit('chatMessage', {
+          playerName: player.name,
+          message,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+    try {
+      roomManager.removePlayer(socket.id);
+      const rooms = roomManager.getAllRooms();
+      rooms.forEach(room => {
+        if (room.players.some(p => p.id === socket.id)) {
+          io.to(room.id).emit('roomUpdated', room);
+        }
+      });
+    } catch (error) {
+      console.error('Error handling disconnect:', error.message);
+    }
+  });
 });
-
-socket.on('submitAnswers', (data) => { const { roomId, answers } = data; try { roomManager.submitAnswers(roomId, socket.id, answers); const room = roomManager.getRoom(roomId); io.to(roomId).emit('roomUpdated', room);
-
-// Check if player finished
-  const player = room.players.find(p => p.id === socket.id);
-  if (player && player.finished) {
-    io.to(roomId).emit('playerFinished', {
-      playerId: socket.id,
-      playerName: player.name
-    });
-  }
-} catch (error) {
-  socket.emit('error', { message: error.message });
-}
-
-});
-
-socket.on('stopPressed', (data) => { const { roomId } = data; try { const room = roomManager.getRoom(roomId); if (room && room.timer) { clearInterval(room.timer); const endData = roomManager.endRound(roomId); io.to(roomId).emit('gameForceEnded', { playerId: socket.id, playerName: room.players.find(p => p.id === socket.id)?.name }); io.to(roomId).emit('roundEnded', endData); } } catch (error) { socket.emit('error', { message: error.message }); } });
-
-socket.on('voteWord', (data) => { const { roomId, playerId, category, vote } = data; try { roomManager.voteWord(roomId, playerId, category, vote); const room = roomManager.getRoom(roomId); io.to(roomId).emit('roomUpdated', room);
-
-// Check if all votes are complete
-  if (roomManager.allVotesComplete(roomId)) {
-    const scores = gameLogic.calculateScores(room);
-    roomManager.updateScores(roomId, scores);
-    io.to(roomId).emit('scoresCalculated', { scores });
-  }
-} catch (error) {
-  socket.emit('error', { message: error.message });
-}
-
-});
-
-socket.on('updateCategories', (data) => { const { roomId, categories } = data; try { const room = roomManager.getRoom(roomId); if (room && room.hostId === socket.id) { roomManager.updateCategories(roomId, categories); io.to(roomId).emit('categoriesUpdated', { categories }); io.to(roomId).emit('roomUpdated', roomManager.getRoom(roomId)); } } catch (error) { socket.emit('error', { message: error.message }); } });
-
-socket.on('chatMessage', (data) => { const { roomId, message } = data; try { const room = roomManager.getRoom(roomId); const player = room?.players.find(p => p.id === socket.id); if (player) { io.to(roomId).emit('chatMessage', { playerName: player.name, message, timestamp: new Date() }); } } catch (error) { socket.emit('error', { message: error.message }); } });
-
-socket.on('disconnect', () => { console.log('User disconnected:', socket.id); try { roomManager.removePlayer(socket.id); // Notify remaining players in rooms const rooms = roomManager.getAllRooms(); rooms.forEach(room => { if (room.players.some(p => p.id === socket.id)) { io.to(room.id).emit('roomUpdated', room); } }); } catch (error) { console.error('Error handling disconnect:', error.message); } }); });
 
 const PORT = process.env.PORT || 10000;
-
-console.log('🔧 Configurações do servidor:'); console.log('- Porta:', PORT); console.log('- Ambiente:', process.env.NODE_ENV); console.log('- Diretório atual:', __dirname); console.log('- Diretório de arquivos estáticos:', path.join(__dirname, '../dist'));
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('Servidor rodando na porta', PORT);
   console.log('Ambiente:', process.env.NODE_ENV || 'development');
   console.log('Servindo arquivos estáticos de:', path.join(__dirname, '../dist'));
 });
-// Health check log console.log(🏥 Health check disponível em: http://localhost:${PORT}/health); });
-
