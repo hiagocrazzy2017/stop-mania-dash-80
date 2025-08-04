@@ -68,34 +68,20 @@ export const useSocket = () => {
   });
 
   useEffect(() => {
-    // Determinar URL do servidor baseado no ambiente
-    const serverUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3001' 
-      : 'https://stop-game-fullstack-backend.onrender.com';
+    // Conectar apenas ao servidor de produção
+    const serverUrl = window.location.origin;
     
-    console.log('Tentando conectar ao servidor:', serverUrl);
+    console.log('Conectando ao servidor:', serverUrl);
     
     // Conectar ao servidor
     socketRef.current = io(serverUrl, {
-      timeout: 10000, // Aumentar timeout para 10s
+      timeout: 20000,
       forceNew: true
     });
     const socket = socketRef.current;
 
-    // Timeout para modo local se não conseguir conectar
-    const connectionTimeout = setTimeout(() => {
-      console.log('Servidor não disponível - funcionando em modo local');
-      setGameState(prev => ({ ...prev, isConnected: true }));
-      toast({
-        title: "Modo local ativo",
-        description: "Para entrar em salas reais, inicie o servidor backend.",
-        variant: "destructive"
-      });
-    }, 10000); // Aumentar timeout para 10s
-
     socket.on('connect', () => {
       console.log('✅ Conectado ao servidor backend!');
-      clearTimeout(connectionTimeout);
       setGameState(prev => ({ ...prev, isConnected: true }));
       toast({
         title: "Conectado ao servidor",
@@ -285,36 +271,11 @@ export const useSocket = () => {
   }, [toast]);
 
   const createRoom = (playerName: string) => {
-    if (socketRef.current?.connected) {
-      socketRef.current?.emit('createRoom', { playerName });
-    } else {
-      // Modo local - simular criação de sala
-      const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const playerId = Math.random().toString(36).substring(2, 10);
-      setGameState(prev => ({
-        ...prev,
-        roomId,
-        playerId,
-        players: [{ id: playerId, name: playerName, score: 0, answers: {}, isReady: false }]
-      }));
-      toast({
-        title: "Sala criada (modo local)!",
-        description: `Código da sala: ${roomId}`,
-      });
-    }
+    socketRef.current?.emit('createRoom', { playerName });
   };
 
   const joinRoom = (roomId: string, playerName: string) => {
-    if (socketRef.current?.connected) {
-      socketRef.current?.emit('joinRoom', { roomId, playerName });
-    } else {
-      // Modo local - simular entrada em sala
-      toast({
-        title: "Modo local ativo",
-        description: "Para entrar em salas reais, inicie o servidor backend.",
-        variant: "destructive"
-      });
-    }
+    socketRef.current?.emit('joinRoom', { roomId, playerName });
   };
 
   const startRound = () => {
@@ -334,36 +295,11 @@ export const useSocket = () => {
   };
 
   const sendChatMessage = (message: string) => {
-    if (socketRef.current?.connected) {
-      socketRef.current?.emit('chatMessage', { message });
-    } else {
-      // Modo local - adicionar mensagem localmente
-      const playerId = gameState.playerId || 'local';
-      const playerName = gameState.players.find(p => p.id === playerId)?.name || 'Você';
-      setGameState(prev => ({
-        ...prev,
-        chatMessages: [...prev.chatMessages, {
-          id: Math.random().toString(36),
-          playerId,
-          playerName,
-          message,
-          timestamp: new Date()
-        }]
-      }));
-    }
+    socketRef.current?.emit('chatMessage', { message });
   };
 
   const updateCategories = (categories: Category[]) => {
-    if (socketRef.current?.connected) {
-      socketRef.current?.emit('updateCategories', { categories });
-    } else {
-      // Modo local - atualizar categorias localmente
-      setGameState(prev => ({ ...prev, categories }));
-      toast({
-        title: "Categorias atualizadas (modo local)!",
-        description: "As categorias foram modificadas.",
-      });
-    }
+    socketRef.current?.emit('updateCategories', { categories });
   };
 
   return {
