@@ -84,7 +84,7 @@ io.on('connection', (socket) => {
     const { roomId } = data;
     try {
       const room = roomManager.getRoom(roomId);
-      if (room && room.host === socket.id) {
+      if (room && room.hostId === socket.id) {
         const letter = gameLogic.getRandomLetter();
         const roundData = roomManager.startRound(roomId, letter);
         io.to(roomId).emit('roundStarted', roundData);
@@ -169,7 +169,7 @@ io.on('connection', (socket) => {
     const { roomId, categories } = data;
     try {
       const room = roomManager.getRoom(roomId);
-      if (room && room.host === socket.id) {
+      if (room && room.hostId === socket.id) {
         roomManager.updateCategories(roomId, categories);
         io.to(roomId).emit('categoriesUpdated', { categories });
         io.to(roomId).emit('roomUpdated', roomManager.getRoom(roomId));
@@ -214,7 +214,15 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
+
+console.log('🔧 Configurações do servidor:');
+console.log('- Porta:', PORT);
+console.log('- Ambiente:', process.env.NODE_ENV);
+console.log('- Diretório atual:', __dirname);
+console.log('- Diretório de arquivos estáticos:', path.join(__dirname, '../dist'));
+
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 Servindo arquivos estáticos de: ${path.join(__dirname, '../dist')}`);
 });

@@ -104,6 +104,135 @@ class RoomManager {
     room.categories = categories;
     return room;
   }
+
+  startRound(roomId, letter) {
+    const room = this.getRoom(roomId);
+    room.currentLetter = letter;
+    room.gameState = 'playing';
+    room.timeLeft = 60;
+    room.roundStartTime = new Date();
+    
+    // Reset player answers
+    room.players.forEach(player => {
+      player.answers = {};
+      player.finished = false;
+    });
+
+    return {
+      letter,
+      timeLeft: room.timeLeft,
+      round: room.currentRound
+    };
+  }
+
+  endRound(roomId) {
+    const room = this.getRoom(roomId);
+    room.gameState = 'voting';
+    
+    if (room.timer) {
+      clearInterval(room.timer);
+      room.timer = null;
+    }
+
+    // Prepare voting data using GameLogic
+    const GameLogic = require('./gameLogic');
+    const gameLogic = new GameLogic();
+    const votingData = gameLogic.prepareVotingData(room.players, room.currentLetter, room.categories);
+    room.voting = votingData;
+
+    return {
+      votingData,
+      players: room.players
+    };
+  }
+
+  submitAnswers(roomId, playerId, answers) {
+    const room = this.getRoom(roomId);
+    const player = room.players.find(p => p.id === playerId);
+    
+    if (!player) {
+      throw new Error('Jogador não encontrado');
+    }
+
+    player.answers = answers;
+    player.finished = true;
+
+    return room;
+  }
+
+  voteWord(roomId, playerId, category, vote) {
+    const room = this.getRoom(roomId);
+    
+    if (!room.voting) {
+      throw new Error('Votação não iniciada');
+    }
+
+    if (!room.voting[category] || !room.voting[category][playerId]) {
+      throw new Error('Palavra não encontrada para votação');
+    }
+
+    // Implementar lógica de votação
+    if (!room.voting[category][playerId].votes) {
+      room.voting[category][playerId].votes = {};
+    }
+
+    // Adicionar o voto (assumindo que cada player pode votar)
+    room.voting[category][playerId].votes[playerId] = vote;
+
+    return room;
+  }
+
+  allVotesComplete(roomId) {
+    const room = this.getRoom(roomId);
+    
+    if (!room.voting) return false;
+
+    // Verificar se todas as palavras foram votadas
+    for (const category in room.voting) {
+      for (const playerId in room.voting[category]) {
+        const wordVoting = room.voting[category][playerId];
+        if (wordVoting.needsVoting && (!wordVoting.votes || Object.keys(wordVoting.votes).length === 0)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  updateScores(roomId, scores) {
+    const room = this.getRoom(roomId);
+    
+    scores.forEach(scoreData => {
+      const player = room.players.find(p => p.id === scoreData.playerId);
+      if (player) {
+        player.score += scoreData.roundScore;
+      }
+    });
+
+    return room;
+  }
+
+  removePlayer(playerId) {
+    for (const [roomId, room] of this.rooms) {
+      const playerIndex = room.players.findIndex(p => p.id === playerId);
+      if (playerIndex !== -1) {
+        room.players.splice(playerIndex, 1);
+        
+        // Se a sala ficar vazia, remove ela
+        if (room.players.length === 0) {
+          if (room.timer) {
+            clearInterval(room.timer);
+          }
+          this.rooms.delete(roomId);
+        }
+        
+        return room;
+      }
+    }
+    
+    return null;
+  }
 }
 
 module.exports = RoomManager;
