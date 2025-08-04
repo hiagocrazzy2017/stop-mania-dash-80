@@ -68,8 +68,13 @@ export const useSocket = () => {
   });
 
   useEffect(() => {
+    // Determinar URL do servidor baseado no ambiente
+    const serverUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3001' 
+      : 'https://stop-game-fullstack-backend.onrender.com';
+    
     // Conectar ao servidor
-    socketRef.current = io('http://localhost:3001', {
+    socketRef.current = io(serverUrl, {
       timeout: 3000,
       forceNew: true
     });

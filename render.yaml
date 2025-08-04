@@ -1,9 +1,23 @@
 services:
+  # Frontend Service
   - type: web
     name: stop-game-fullstack
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build
+    startCommand: npm run preview -- --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: PORT
+        value: 10000
+        
+  # Backend Service  
+  - type: web
+    name: stop-game-fullstack-backend
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm install
     startCommand: cd server && npm start
     envVars:
       - key: NODE_VERSION
