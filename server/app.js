@@ -2,16 +2,22 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 const RoomManager = require('./roomManager');
 const GameLogic = require('./gameLogic');
 
 const app = express();
 const server = createServer(app);
 
+// Serve static files from the React build
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../dist')));
+}
+
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://stop-game-fullstack.onrender.com', 'https://pulsestop.onrender.com'] 
+    ? ['https://pulsestop.onrender.com'] 
     : ['http://localhost:8080', 'http://localhost:5173'],
   credentials: true
 }));
@@ -19,7 +25,7 @@ app.use(cors({
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://stop-game-fullstack.onrender.com', 'https://pulsestop.onrender.com'] 
+      ? ['https://pulsestop.onrender.com'] 
       : ['http://localhost:8080', 'http://localhost:5173'],
     methods: ['GET', 'POST'],
     credentials: true
@@ -33,6 +39,13 @@ const gameLogic = new GameLogic();
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Serve React app for all non-API routes
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  });
+}
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
