@@ -9,26 +9,16 @@ const GameLogic = require('./gameLogic');
 const app = express();
 const server = createServer(app);
 
-// Serve static files from the React build
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-}
+// Simplified CORS
+app.use(cors());
 
-// CORS configuration
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://pulsestop.onrender.com'] 
-    : ['http://localhost:8080', 'http://localhost:5173'],
-  credentials: true
-}));
+// Serve static files from the React build
+app.use(express.static(path.join(__dirname, '../dist')));
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://pulsestop.onrender.com'] 
-      : ['http://localhost:8080', 'http://localhost:5173'],
-    methods: ['GET', 'POST'],
-    credentials: true
+    origin: "*",
+    methods: ['GET', 'POST']
   }
 });
 
@@ -40,12 +30,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Serve React app for all non-API routes
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
-  });
-}
+// Serve React app for all routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
