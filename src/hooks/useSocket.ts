@@ -94,19 +94,30 @@ export const useSocket = () => {
     }, 10000); // Aumentar timeout para 10s
 
     socket.on('connect', () => {
+      console.log('✅ Conectado ao servidor backend!');
       clearTimeout(connectionTimeout);
       setGameState(prev => ({ ...prev, isConnected: true }));
       toast({
         title: "Conectado ao servidor",
-        description: "Você está pronto para jogar!",
+        description: "Você está pronto para jogar online!",
       });
     });
 
     socket.on('disconnect', () => {
+      console.log('❌ Desconectado do servidor backend');
       setGameState(prev => ({ ...prev, isConnected: false }));
       toast({
         title: "Desconectado",
         description: "Tentando reconectar...",
+        variant: "destructive"
+      });
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('❌ Erro de conexão:', error.message);
+      toast({
+        title: "Erro de conexão",
+        description: `Não foi possível conectar ao servidor: ${error.message}`,
         variant: "destructive"
       });
     });

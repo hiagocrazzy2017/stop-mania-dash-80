@@ -40,22 +40,29 @@ io.on('connection', (socket) => {
 
   socket.on('createRoom', (data) => {
     const { playerName } = data;
-    const room = roomManager.createRoom(playerName, socket.id);
-    socket.join(room.id);
-    socket.emit('roomCreated', { roomId: room.id, isHost: true });
-    socket.emit('joinedRoom', room);
-    console.log(`Room ${room.id} created by ${playerName}`);
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const room = roomManager.createRoom(roomId);
+    const player = { id: socket.id, name: playerName, score: 0, answers: {}, isReady: false };
+    room.players.push(player);
+    room.hostId = socket.id;
+    
+    socket.join(roomId);
+    socket.emit('roomCreated', { roomId, room });
+    console.log(`Room ${roomId} created by ${playerName}`);
   });
 
   socket.on('joinRoom', (data) => {
     const { roomId, playerName } = data;
     try {
-      const room = roomManager.joinRoom(roomId, playerName, socket.id);
+      const player = { id: socket.id, name: playerName, score: 0, answers: {}, isReady: false };
+      const room = roomManager.joinRoom(roomId, player);
+      
       socket.join(roomId);
-      socket.emit('joinedRoom', room);
-      io.to(roomId).emit('roomUpdated', room);
+      socket.emit('joinedRoom', { roomId, playerId: socket.id, room });
+      io.to(roomId).emit('roomUpdated', { players: room.players, gameState: room.gameState, currentRound: room.currentRound });
       console.log(`${playerName} joined room ${roomId}`);
     } catch (error) {
+      console.error(`Error joining room: ${error.message}`);
       socket.emit('error', { message: error.message });
     }
   });
@@ -195,5 +202,6 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

@@ -9,8 +9,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 18
-      - key: PORT
-        value: 10000
         
   # Backend Service  
   - type: web
@@ -22,5 +20,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 18
-      - key: PORT
-        value: 10000
+      - key: NODE_ENV
+        value: production
