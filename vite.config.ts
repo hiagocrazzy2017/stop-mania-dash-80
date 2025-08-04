@@ -8,6 +8,11 @@ export default defineConfig({
     host: "::",
     port: 8080,
   },
+  preview: {
+    host: "::",
+    port: 4173,
+    allowedHosts: ["pulsestop.onrender.com", "localhost", "127.0.0.1"]
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
