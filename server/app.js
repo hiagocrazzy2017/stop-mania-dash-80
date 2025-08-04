@@ -102,7 +102,10 @@ const PORT = process.env.PORT || 10000;
 
 console.log('🔧 Configurações do servidor:'); console.log('- Porta:', PORT); console.log('- Ambiente:', process.env.NODE_ENV); console.log('- Diretório atual:', __dirname); console.log('- Diretório de arquivos estáticos:', path.join(__dirname, '../dist'));
 
-server.listen(PORT, '0.0.0.0', () => { console.log(🚀 Servidor rodando na porta ${PORT}); console.log(🌍 Ambiente: ${process.env.NODE_ENV || 'development'}); console.log(📁 Servindo arquivos estáticos de: ${path.join(__dirname, '../dist')});
-
+server.listen(PORT, '0.0.0.0', () => {
+  console.log('Servidor rodando na porta', PORT);
+  console.log('Ambiente:', process.env.NODE_ENV || 'development');
+  console.log('Servindo arquivos estáticos de:', path.join(__dirname, '../dist'));
+});
 // Health check log console.log(🏥 Health check disponível em: http://localhost:${PORT}/health); });
 
