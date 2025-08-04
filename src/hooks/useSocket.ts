@@ -73,9 +73,11 @@ export const useSocket = () => {
       ? 'http://localhost:3001' 
       : 'https://stop-game-fullstack-backend.onrender.com';
     
+    console.log('Tentando conectar ao servidor:', serverUrl);
+    
     // Conectar ao servidor
     socketRef.current = io(serverUrl, {
-      timeout: 3000,
+      timeout: 10000, // Aumentar timeout para 10s
       forceNew: true
     });
     const socket = socketRef.current;
@@ -86,10 +88,10 @@ export const useSocket = () => {
       setGameState(prev => ({ ...prev, isConnected: true }));
       toast({
         title: "Modo local ativo",
-        description: "Servidor não disponível. Execute o backend para multiplayer.",
-        variant: "default"
+        description: "Para entrar em salas reais, inicie o servidor backend.",
+        variant: "destructive"
       });
-    }, 3000);
+    }, 10000); // Aumentar timeout para 10s
 
     socket.on('connect', () => {
       clearTimeout(connectionTimeout);
