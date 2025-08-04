@@ -1,11 +1,10 @@
 services:
-  # Fullstack Service (Frontend + Backend)
   - type: web
     name: pulsestop
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build && cd server && npm install
-    startCommand: cd server && node app.js
+    buildCommand: npm install && npm run build && cd server && npm install
+    startCommand: cd server && npm start
     envVars:
       - key: NODE_VERSION
         value: 18

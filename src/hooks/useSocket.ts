@@ -68,7 +68,7 @@ export const useSocket = () => {
   });
 
   useEffect(() => {
-    // Conectar apenas ao servidor de produção
+    // Conectar ao mesmo servidor que hospeda o frontend
     const serverUrl = window.location.origin;
     
     console.log('Conectando ao servidor:', serverUrl);
