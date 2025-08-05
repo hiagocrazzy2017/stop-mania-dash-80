@@ -13,18 +13,20 @@ const server = createServer(app);
 app.use(cors());
 
 // Log para verificar caminhos
-const candidatePaths = [
-  path.join(__dirname, '..', 'dist'),
-  path.join(process.cwd(), 'dist'),
-  path.join(__dirname, '..', 'src', 'dist')
-];
-const distPath = candidatePaths.find((p) => require('fs').existsSync(p)) || candidatePaths[0];
-const indexPath = path.join(distPath, 'index.html');
-console.log('Dist path candidates:', candidatePaths);
-console.log('Using dist path:', distPath);
-console.log('Index path:', indexPath);
-console.log('Dist exists:', require('fs').existsSync(distPath));
-console.log('Index exists:', require('fs').existsSync(indexPath));
+  const candidatePaths = [
+    path.join(__dirname, '..', '..', 'dist'), // project root dist (Render build)
+    path.join(__dirname, '..', 'dist'),       // monorepo-style
+    path.join(process.cwd(), '..', 'dist'),   // if cwd is server/, go up
+    path.join(process.cwd(), 'dist'),         // rarely used
+    path.join(__dirname, '..', 'src', 'dist') // fallback (shouldn't be used)
+  ];
+  const distPath = candidatePaths.find((p) => require('fs').existsSync(p)) || path.join(__dirname, '..', '..', 'dist');
+  const indexPath = path.join(distPath, 'index.html');
+  console.log('Dist path candidates:', candidatePaths);
+  console.log('Using dist path:', distPath);
+  console.log('Index path:', indexPath);
+  console.log('Dist exists:', require('fs').existsSync(distPath));
+  console.log('Index exists:', require('fs').existsSync(indexPath));
 
 app.use(express.static(distPath));
 
