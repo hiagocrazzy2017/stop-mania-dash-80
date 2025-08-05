@@ -3,7 +3,7 @@ services:
     name: pulsestop
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build && cd server && npm install express socket.io cors && ls -la ../dist
+    buildCommand: npm ci && npm run build && ls -la dist && cd server && npm install express socket.io cors
     startCommand: cd server && npm start
     envVars:
       - key: NODE_VERSION
