@@ -11,7 +11,16 @@ const server = createServer(app);
 
 // Middleware
 app.use(cors());
-app.use(express.static(path.resolve(__dirname, '../dist')));
+
+// Log para verificar caminhos
+const distPath = path.resolve(__dirname, '../dist');
+const indexPath = path.resolve(__dirname, '../dist/index.html');
+console.log('Dist path:', distPath);
+console.log('Index path:', indexPath);
+console.log('Dist exists:', require('fs').existsSync(distPath));
+console.log('Index exists:', require('fs').existsSync(indexPath));
+
+app.use(express.static(distPath));
 
 // Socket.IO setup
 const io = new Server(server, {
