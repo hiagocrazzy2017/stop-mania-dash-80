@@ -13,8 +13,8 @@ const server = createServer(app);
 app.use(cors());
 
 // Log para verificar caminhos
-const distPath = path.resolve(__dirname, '../dist');
-const indexPath = path.resolve(__dirname, '../dist/index.html');
+const distPath = path.join(__dirname, '..', 'dist');
+const indexPath = path.join(distPath, 'index.html');
 console.log('Dist path:', distPath);
 console.log('Index path:', indexPath);
 console.log('Dist exists:', require('fs').existsSync(distPath));
@@ -40,7 +40,7 @@ app.get('/health', (req, res) => {
 
 // Serve React app - this must be the last route
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../dist/index.html'));
+  res.sendFile(indexPath);
 });
 
 // Socket.IO event handlers
