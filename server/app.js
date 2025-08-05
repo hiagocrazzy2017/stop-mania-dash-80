@@ -26,8 +26,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 🚨 Correção aqui: rota wildcard nomeada
-app.get('/*path', (req, res) => {
+// Serve React app for all non-API routes
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
