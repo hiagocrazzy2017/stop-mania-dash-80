@@ -11,7 +11,7 @@ const server = createServer(app);
 
 // Middleware
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.resolve(__dirname, '../dist')));
 
 // Socket.IO setup
 const io = new Server(server, {
@@ -31,7 +31,7 @@ app.get('/health', (req, res) => {
 
 // Serve React app - this must be the last route
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.sendFile(path.resolve(__dirname, '../dist/index.html'));
 });
 
 // Socket.IO event handlers
