@@ -13,9 +13,15 @@ const server = createServer(app);
 app.use(cors());
 
 // Log para verificar caminhos
-const distPath = path.join(__dirname, '..', 'dist');
+const candidatePaths = [
+  path.join(__dirname, '..', 'dist'),
+  path.join(process.cwd(), 'dist'),
+  path.join(__dirname, '..', 'src', 'dist')
+];
+const distPath = candidatePaths.find((p) => require('fs').existsSync(p)) || candidatePaths[0];
 const indexPath = path.join(distPath, 'index.html');
-console.log('Dist path:', distPath);
+console.log('Dist path candidates:', candidatePaths);
+console.log('Using dist path:', distPath);
 console.log('Index path:', indexPath);
 console.log('Dist exists:', require('fs').existsSync(distPath));
 console.log('Index exists:', require('fs').existsSync(indexPath));
@@ -220,5 +226,5 @@ const PORT = process.env.PORT || 10000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log('Servidor rodando na porta', PORT);
   console.log('Ambiente:', process.env.NODE_ENV || 'development');
-  console.log('Servindo arquivos estáticos de:', path.join(__dirname, '../dist'));
+  console.log('Servindo arquivos estáticos de:', distPath);
 });
