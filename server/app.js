@@ -19,8 +19,7 @@ app.use(cors());
     path.resolve(__dirname, '..', '..', 'dist'),  // root/dist
     path.resolve(process.cwd(), '..', 'dist'),    // if cwd is server/
     path.resolve(process.cwd(), 'dist'),          // rarely used
-    path.resolve(__dirname, '..', 'dist'),        // monorepo-style
-    path.resolve(__dirname, '..', 'src', 'dist')  // wrong but logged if chosen
+    path.resolve(__dirname, '..', 'dist')         // monorepo-style (no /src)
   ];
   const resolved = candidatePaths.find((p) => fs.existsSync(path.join(p, 'index.html')));
   const distPath = resolved || path.resolve(__dirname, 'public');
