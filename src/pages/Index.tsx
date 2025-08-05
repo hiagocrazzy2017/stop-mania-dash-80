@@ -212,12 +212,7 @@ const Index = () => {
               </div>
             )}
             
-            <div className="text-center text-sm text-muted-foreground space-y-2">
-              <p>🎯 Complete as categorias com a letra sorteada</p>
-              <p>⚡ Seja o primeiro a terminar e grite "STOP!"</p>
-              <p>🗳️ Vote nas palavras dos outros jogadores</p>
-              <p>🏆 Ganhe pontos por respostas únicas e aceitas</p>
-            </div>
+            
           </CardContent>
         </Card>
       </div>
