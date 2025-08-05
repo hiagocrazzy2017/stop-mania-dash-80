@@ -9,9 +9,11 @@ const GameLogic = require('./gameLogic');
 const app = express();
 const server = createServer(app);
 
+// Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, '../dist')));
 
+// Socket.IO setup
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -22,15 +24,17 @@ const io = new Server(server, {
 const roomManager = new RoomManager();
 const gameLogic = new GameLogic();
 
+// Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Serve React app for all non-API routes
+// Serve React app - this must be the last route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
+// Socket.IO event handlers
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
