@@ -279,27 +279,39 @@ export const useSocket = () => {
   };
 
   const startRound = () => {
-    socketRef.current?.emit('startRound');
+    if (gameState.roomId) {
+      socketRef.current?.emit('startRound', { roomId: gameState.roomId });
+    }
   };
 
   const submitAnswers = (answers: Record<string, string>) => {
-    socketRef.current?.emit('submitAnswers', { answers });
+    if (gameState.roomId) {
+      socketRef.current?.emit('submitAnswers', { roomId: gameState.roomId, answers });
+    }
   };
 
   const stopGame = () => {
-    socketRef.current?.emit('stopPressed');
+    if (gameState.roomId) {
+      socketRef.current?.emit('stopPressed', { roomId: gameState.roomId });
+    }
   };
 
   const voteWord = (category: string, playerId: string, vote: 'accept' | 'reject') => {
-    socketRef.current?.emit('voteWord', { category, playerId, vote });
+    if (gameState.roomId) {
+      socketRef.current?.emit('voteWord', { roomId: gameState.roomId, category, playerId, vote });
+    }
   };
 
   const sendChatMessage = (message: string) => {
-    socketRef.current?.emit('chatMessage', { message });
+    if (gameState.roomId) {
+      socketRef.current?.emit('chatMessage', { roomId: gameState.roomId, message });
+    }
   };
 
   const updateCategories = (categories: Category[]) => {
-    socketRef.current?.emit('updateCategories', { categories });
+    if (gameState.roomId) {
+      socketRef.current?.emit('updateCategories', { roomId: gameState.roomId, categories });
+    }
   };
 
   return {

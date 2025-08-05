@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
         let timeLeft = 60;
         const timer = setInterval(() => {
           timeLeft--;
-          io.to(roomId).emit('timeUpdate', { timeLeft });
+          io.to(roomId).emit('timeUpdate', timeLeft);
 
           if (timeLeft <= 0) {
             clearInterval(timer);
@@ -115,10 +115,12 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('roomUpdated', room);
 
       const player = room.players.find(p => p.id === socket.id);
-      if (player && player.finished) {
+      if (player) {
+        const allPlayersFinished = room.players.every(p => p.isReady);
         io.to(roomId).emit('playerFinished', {
           playerId: socket.id,
-          playerName: player.name
+          playerName: player.name,
+          allReady: allPlayersFinished
         });
       }
     } catch (error) {
@@ -153,8 +155,12 @@ io.on('connection', (socket) => {
 
       if (roomManager.allVotesComplete(roomId)) {
         const scores = gameLogic.calculateScores(room);
-        roomManager.updateScores(roomId, scores);
-        io.to(roomId).emit('scoresCalculated', { scores });
+        const updatedRoom = roomManager.updateScores(roomId, scores);
+        io.to(roomId).emit('scoresCalculated', { 
+          scores, 
+          players: updatedRoom.players, 
+          round: updatedRoom.currentRound 
+        });
       }
     } catch (error) {
       socket.emit('error', { message: error.message });
@@ -182,6 +188,7 @@ io.on('connection', (socket) => {
       const player = room?.players.find(p => p.id === socket.id);
       if (player) {
         io.to(roomId).emit('chatMessage', {
+          playerId: socket.id,
           playerName: player.name,
           message,
           timestamp: new Date()
