@@ -5,13 +5,11 @@ services:
     plan: free
     buildCommand: >-
       set -e && \
-      npm ci && \
+      npm install && \
       npm run build && \
-      PUB_DIR="server/public" && \
-      rm -rf "$PUB_DIR" && mkdir -p "$PUB_DIR" && \
-      if [ -d dist ]; then SRC_DIST="dist"; elif [ -d ../dist ]; then SRC_DIST="../dist"; elif [ -d src/dist ]; then SRC_DIST="src/dist"; else echo "No dist folder found"; exit 1; fi && \
-      cp -R "$SRC_DIST"/* "$PUB_DIR"/ && \
-      cd server && npm ci --omit=dev
+      rm -rf server/public && mkdir -p server/public && \
+      cp -R dist/* server/public/ && \
+      cd server && npm install --omit=dev
     startCommand: cd server && npm start
     envVars:
       - key: NODE_VERSION
