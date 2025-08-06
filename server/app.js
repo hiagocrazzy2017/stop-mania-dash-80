@@ -162,7 +162,12 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('roomUpdated', room);
 
       if (roomManager.allVotesComplete(roomId)) {
-        const scores = gameLogic.calculateScores(room);
+        const scores = gameLogic.calculateScores(
+          room.players,
+          room.voting,
+          room.currentLetter,
+          room.categories
+        );
         const updatedRoom = roomManager.updateScores(roomId, scores);
         io.to(roomId).emit('scoresCalculated', { 
           scores, 

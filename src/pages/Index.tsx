@@ -267,6 +267,7 @@ const Index = () => {
                   onLetterSelected={handleLetterSelected}
                   isSpinning={isSpinning}
                   setIsSpinning={setIsSpinning}
+                  targetLetter={gameState.currentLetter}
                 />
                 
                 {gameState.gameState === 'waiting' && (

@@ -5,35 +5,50 @@ interface LetterWheelProps {
   onLetterSelected: (letter: string) => void;
   isSpinning: boolean;
   setIsSpinning: (spinning: boolean) => void;
+  targetLetter?: string;
 }
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'J', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X'];
 
-export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning }: LetterWheelProps) => {
+export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning, targetLetter }: LetterWheelProps) => {
   const [currentLetter, setCurrentLetter] = useState('A');
-  const [spinDuration, setSpinDuration] = useState(0);
+  // Sync with server-selected letter
+  useEffect(() => {
+    if (targetLetter && targetLetter !== currentLetter) {
+      setCurrentLetter(targetLetter);
+      setIsSpinning(false);
+    }
+  }, [targetLetter, currentLetter, setIsSpinning]);
 
   const spinWheel = () => {
     if (isSpinning) return;
-    
     setIsSpinning(true);
+
     const duration = Math.random() * 2000 + 2000; // 2-4 seconds
-    setSpinDuration(duration);
-    
+
     let interval: NodeJS.Timeout;
     let elapsed = 0;
     const intervalTime = 50;
-    
+
     interval = setInterval(() => {
+      // keep animating letters while spinning
       setCurrentLetter(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
       elapsed += intervalTime;
-      
+
+      // If server already provided a target, stop earlier and lock to it
+      if (targetLetter) {
+        clearInterval(interval);
+        setCurrentLetter(targetLetter);
+        setIsSpinning(false);
+        onLetterSelected(targetLetter);
+        return;
+      }
+
       if (elapsed >= duration) {
         clearInterval(interval);
-        const finalLetter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-        setCurrentLetter(finalLetter);
+        // If no server letter, fallback to last random and notify
         setIsSpinning(false);
-        onLetterSelected(finalLetter);
+        onLetterSelected(currentLetter);
       }
     }, intervalTime);
   };
