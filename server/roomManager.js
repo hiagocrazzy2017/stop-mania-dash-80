@@ -160,44 +160,56 @@ class RoomManager {
     return room;
   }
 
-  voteWord(roomId, playerId, category, vote) {
+  voteWord(roomId, targetPlayerId, category, vote, voterId) {
     const room = this.getRoom(roomId);
     
     if (!room.voting) {
       throw new Error('Votação não iniciada');
     }
 
-    if (!room.voting[category] || !room.voting[category][playerId]) {
+    if (!room.voting[category] || !room.voting[category][targetPlayerId]) {
       throw new Error('Palavra não encontrada para votação');
     }
 
-    // Implementar lógica de votação
-    if (!room.voting[category][playerId].votes) {
-      room.voting[category][playerId].votes = {};
+    // Inicializa estrutura de votos
+    const wordVoting = room.voting[category][targetPlayerId];
+    if (!wordVoting.votes) {
+      wordVoting.votes = {};
     }
 
-    // Adicionar o voto (assumindo que cada player pode votar)
-    room.voting[category][playerId].votes[playerId] = vote;
+    // Registra voto do votante (último voto prevalece)
+    wordVoting.votes[voterId] = vote;
 
     return room;
   }
 
   allVotesComplete(roomId) {
     const room = this.getRoom(roomId);
-    
     if (!room.voting) return false;
 
-    // Verificar se todas as palavras foram votadas
-    for (const category in room.voting) {
-      for (const playerId in room.voting[category]) {
-        const wordVoting = room.voting[category][playerId];
-        if (wordVoting.needsVoting && (!wordVoting.votes || Object.keys(wordVoting.votes).length === 0)) {
-          return false;
+    const requiredVotes = Math.max(0, room.players.length - 1);
+    let allComplete = true;
+
+    for (const categoryId in room.voting) {
+      const categoryVoting = room.voting[categoryId];
+      for (const authorId in categoryVoting) {
+        const wordVoting = categoryVoting[authorId];
+        if (!wordVoting.needsVoting) continue;
+        const votes = wordVoting.votes || {};
+        const voteCount = Object.keys(votes).length;
+        if (voteCount < requiredVotes) {
+          allComplete = false;
+        }
+        // Se já atingiu o número de votos necessários, calcula resultado parcial
+        if (voteCount >= requiredVotes) {
+          const accepts = Object.values(votes).filter(v => v === 'accept').length;
+          const rejects = Object.values(votes).filter(v => v === 'reject').length;
+          wordVoting.result = accepts > rejects ? 'accepted' : 'rejected';
         }
       }
     }
 
-    return true;
+    return allComplete;
   }
 
   updateScores(roomId, scores) {
