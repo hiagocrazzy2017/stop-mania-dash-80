@@ -87,7 +87,6 @@ const Index = () => {
 
   const handleStopGame = () => {
     stopGame();
-    submitAnswers(currentAnswers);
   };
 
   const handleAnswerChange = (category: string, value: string) => {

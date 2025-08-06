@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,12 @@ export const GameBoard = ({
   const [answers, setAnswers] = useState<Record<string, string>>(currentAnswers);
   const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [isComplete, setIsComplete] = useState(false);
+  const submittedRef = useRef(false);
+
+  // Reset submission flag at the start of each round or when letter changes
+  useEffect(() => {
+    submittedRef.current = false;
+  }, [currentLetter, gameState]);
 
   // Sync with external answers
   useEffect(() => {
@@ -52,11 +58,12 @@ export const GameBoard = ({
     const allFieldsFilled = categories.every(cat => answers[cat.id]?.trim());
     setIsComplete(allFieldsFilled);
     
-    // Auto-submit when complete if callback provided
-    if (allFieldsFilled && onSubmitAnswers) {
+    // Auto-submit once per round when complete
+    if (isGameActive && allFieldsFilled && onSubmitAnswers && !submittedRef.current) {
+      submittedRef.current = true;
       onSubmitAnswers(answers);
     }
-  }, [answers, onSubmitAnswers, categories]);
+  }, [answers, onSubmitAnswers, categories, isGameActive]);
 
   const handleAnswerChange = (categoryId: string, value: string) => {
     const newAnswers = {
@@ -72,7 +79,8 @@ export const GameBoard = ({
   };
 
   const handleStop = () => {
-    if (onSubmitAnswers) {
+    if (onSubmitAnswers && !submittedRef.current) {
+      submittedRef.current = true;
       onSubmitAnswers(answers);
     }
     onStopGame();
