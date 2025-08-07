@@ -90,12 +90,10 @@ const Index = () => {
   };
 
   const handleAnswerChange = (category: string, value: string) => {
-    setCurrentAnswers(prev => {
-      const updated = { ...prev, [category]: value };
-      // Envia respostas parciais ao servidor para garantir votação de todos
-      submitAnswers(updated);
-      return updated;
-    });
+    setCurrentAnswers(prev => ({
+      ...prev,
+      [category]: value
+    }));
   };
 
   const handleSubmitAnswers = (answers: Record<string, string>) => {

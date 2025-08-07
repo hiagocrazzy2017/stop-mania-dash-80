@@ -157,12 +157,9 @@ io.on('connection', (socket) => {
   socket.on('voteWord', (data) => {
     const { roomId, playerId, category, vote } = data;
     try {
-      roomManager.voteWord(roomId, playerId, category, vote, socket.id);
+      roomManager.voteWord(roomId, playerId, category, vote);
       const room = roomManager.getRoom(roomId);
-
-      // Notificar clientes sobre atualização de votos dessa palavra
-      const votes = room.voting?.[category]?.[playerId]?.votes || {};
-      io.to(roomId).emit('voteUpdated', { category, playerId, votes });
+      io.to(roomId).emit('roomUpdated', room);
 
       if (roomManager.allVotesComplete(roomId)) {
         const scores = gameLogic.calculateScores(
