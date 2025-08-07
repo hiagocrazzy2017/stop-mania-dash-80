@@ -290,9 +290,9 @@ export const useSocket = () => {
     }
   };
 
-  const stopGame = () => {
+  const stopGame = (answers?: Record<string, string>) => {
     if (gameState.roomId) {
-      socketRef.current?.emit('stopPressed', { roomId: gameState.roomId });
+      socketRef.current?.emit('stopPressed', { roomId: gameState.roomId, answers });
     }
   };
 

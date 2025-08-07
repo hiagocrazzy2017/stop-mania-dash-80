@@ -86,7 +86,7 @@ const Index = () => {
   };
 
   const handleStopGame = () => {
-    stopGame();
+    stopGame(currentAnswers);
   };
 
   const handleAnswerChange = (category: string, value: string) => {

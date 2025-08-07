@@ -160,24 +160,39 @@ class RoomManager {
     return room;
   }
 
-  voteWord(roomId, playerId, category, vote) {
+  voteWord(roomId, voterId, targetPlayerId, category, vote) {
     const room = this.getRoom(roomId);
     
     if (!room.voting) {
       throw new Error('Votação não iniciada');
     }
 
-    if (!room.voting[category] || !room.voting[category][playerId]) {
+    if (!room.voting[category] || !room.voting[category][targetPlayerId]) {
       throw new Error('Palavra não encontrada para votação');
     }
 
-    // Implementar lógica de votação
-    if (!room.voting[category][playerId].votes) {
-      room.voting[category][playerId].votes = {};
+    // Inicializar votos se necessário
+    if (!room.voting[category][targetPlayerId].votes) {
+      room.voting[category][targetPlayerId].votes = {};
     }
 
-    // Adicionar o voto (assumindo que cada player pode votar)
-    room.voting[category][playerId].votes[playerId] = vote;
+    // Adicionar o voto do jogador atual
+    room.voting[category][targetPlayerId].votes[voterId] = vote;
+
+    // Verificar se todos os outros jogadores já votaram nesta palavra
+    const otherPlayers = room.players.filter(p => p.id !== targetPlayerId);
+    const requiredVotes = otherPlayers.length;
+    const currentVotes = Object.keys(room.voting[category][targetPlayerId].votes).length;
+
+    // Se todos votaram, determinar o resultado
+    if (currentVotes >= requiredVotes) {
+      const votes = Object.values(room.voting[category][targetPlayerId].votes);
+      const acceptVotes = votes.filter(v => v === 'accept').length;
+      const rejectVotes = votes.filter(v => v === 'reject').length;
+      
+      // Maioria decide
+      room.voting[category][targetPlayerId].result = acceptVotes > rejectVotes ? 'accepted' : 'rejected';
+    }
 
     return room;
   }
@@ -187,11 +202,11 @@ class RoomManager {
     
     if (!room.voting) return false;
 
-    // Verificar se todas as palavras foram votadas
+    // Verificar se todas as palavras têm resultado definido
     for (const category in room.voting) {
       for (const playerId in room.voting[category]) {
         const wordVoting = room.voting[category][playerId];
-        if (wordVoting.needsVoting && (!wordVoting.votes || Object.keys(wordVoting.votes).length === 0)) {
+        if (wordVoting.needsVoting && !wordVoting.result) {
           return false;
         }
       }

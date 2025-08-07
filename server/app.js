@@ -103,6 +103,14 @@ io.on('connection', (socket) => {
 
           if (timeLeft <= 0) {
             clearInterval(timer);
+            
+            // Coletar respostas de todos os jogadores automaticamente quando o tempo acabar
+            room.players.forEach(player => {
+              if (!player.answers || Object.keys(player.answers).length === 0) {
+                player.answers = {}; // Garantir que tem pelo menos um objeto vazio
+              }
+            });
+            
             const endData = roomManager.endRound(roomId);
             io.to(roomId).emit('roundEnded', endData);
           }
@@ -137,11 +145,24 @@ io.on('connection', (socket) => {
   });
 
   socket.on('stopPressed', (data) => {
-    const { roomId } = data;
+    const { roomId, answers } = data;
     try {
       const room = roomManager.getRoom(roomId);
       if (room && room.timer) {
+        // Submeter respostas do jogador que parou primeiro
+        if (answers) {
+          roomManager.submitAnswers(roomId, socket.id, answers);
+        }
+        
         clearInterval(room.timer);
+        
+        // Coletar respostas de todos os jogadores automaticamente
+        room.players.forEach(player => {
+          if (!player.answers || Object.keys(player.answers).length === 0) {
+            player.answers = {}; // Garantir que tem pelo menos um objeto vazio
+          }
+        });
+        
         const endData = roomManager.endRound(roomId);
         io.to(roomId).emit('gameForceEnded', {
           playerId: socket.id,
@@ -157,7 +178,7 @@ io.on('connection', (socket) => {
   socket.on('voteWord', (data) => {
     const { roomId, playerId, category, vote } = data;
     try {
-      roomManager.voteWord(roomId, playerId, category, vote);
+      roomManager.voteWord(roomId, socket.id, playerId, category, vote);
       const room = roomManager.getRoom(roomId);
       io.to(roomId).emit('roomUpdated', room);
 
