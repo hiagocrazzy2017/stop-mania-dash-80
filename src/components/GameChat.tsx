@@ -77,10 +77,10 @@ export const GameChat = ({ playerId, playerName, messages, onSendMessage }: Game
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col space-y-3 p-4 pt-0">
+      <CardContent className="flex-1 flex flex-col p-4 pt-0 overflow-hidden">
         {/* Messages Area */}
-        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-          <div className="space-y-2">
+        <ScrollArea className="flex-1 mb-3" ref={scrollAreaRef}>
+          <div className="space-y-2 pb-2">
             {messages.length === 0 ? (
               <div className="text-center text-muted-foreground text-sm py-8">
                 <p>💬 Nenhuma mensagem ainda</p>
@@ -118,7 +118,7 @@ export const GameChat = ({ playerId, playerName, messages, onSendMessage }: Game
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <div className="flex-1 flex items-center space-x-2">
             <Input
               value={message}

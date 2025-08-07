@@ -150,6 +150,7 @@ export const useSocket = () => {
     });
 
     socket.on('roundStarted', ({ letter, timeLeft, round }) => {
+      console.log('Rodada iniciada:', { letter, timeLeft, round });
       setGameState(prev => ({
         ...prev,
         currentLetter: letter,

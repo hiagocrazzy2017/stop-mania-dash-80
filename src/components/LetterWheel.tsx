@@ -25,6 +25,7 @@ export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning, targe
     setIsSpinning(true);
 
     const duration = Math.random() * 2000 + 2000; // 2-4 seconds
+    let finalLetter = currentLetter;
 
     let interval: NodeJS.Timeout;
     let elapsed = 0;
@@ -32,7 +33,9 @@ export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning, targe
 
     interval = setInterval(() => {
       // keep animating letters while spinning
-      setCurrentLetter(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
+      const randomLetter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+      setCurrentLetter(randomLetter);
+      finalLetter = randomLetter; // Store last random letter as fallback
       elapsed += intervalTime;
 
       // If server already provided a target, stop earlier and lock to it
@@ -47,8 +50,10 @@ export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning, targe
       if (elapsed >= duration) {
         clearInterval(interval);
         // If no server letter, fallback to last random and notify
+        setCurrentLetter(finalLetter);
         setIsSpinning(false);
-        onLetterSelected(currentLetter);
+        onLetterSelected(finalLetter);
+        console.log('Roleta parou com letra:', finalLetter);
       }
     }, intervalTime);
   };

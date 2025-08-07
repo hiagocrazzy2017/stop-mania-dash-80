@@ -81,6 +81,7 @@ const Index = () => {
       });
       return;
     }
+    console.log('Iniciando rodada...');
     setIsSpinning(true);
     startRound();
   };
