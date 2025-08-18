@@ -25,7 +25,7 @@ export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning, targe
     setIsSpinning(true);
 
     const duration = Math.random() * 2000 + 2000; // 2-4 seconds
-    let finalLetter = currentLetter;
+    let finalLetter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
 
     let interval: NodeJS.Timeout;
     let elapsed = 0;
@@ -49,7 +49,7 @@ export const LetterWheel = ({ onLetterSelected, isSpinning, setIsSpinning, targe
 
       if (elapsed >= duration) {
         clearInterval(interval);
-        // If no server letter, fallback to last random and notify
+        // Always use finalLetter and notify parent
         setCurrentLetter(finalLetter);
         setIsSpinning(false);
         onLetterSelected(finalLetter);

@@ -73,6 +73,16 @@ const Index = () => {
   };
 
   const handleStartRound = () => {
+    // Permitir iniciar nova rodada tanto no estado 'results' quanto 'waiting'
+    if (gameState.gameState !== 'results' && gameState.gameState !== 'waiting') {
+      toast({
+        title: "Rodada ainda em andamento",
+        description: "Aguarde a rodada atual terminar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (gameState.players.length < 2) {
       toast({
         title: "Jogadores insuficientes",
@@ -270,14 +280,14 @@ const Index = () => {
                   targetLetter={gameState.currentLetter}
                 />
                 
-                {gameState.gameState === 'waiting' && (
+                {gameState.isHost && (gameState.gameState === 'waiting' || gameState.gameState === 'results') && (
                   <div className="space-y-2">
                     <Button
                       onClick={handleStartRound}
                       className="w-full bg-gradient-secondary hover:bg-gradient-accent text-white"
                       disabled={gameState.players.length < 2}
                     >
-                      Iniciar Rodada
+                      {gameState.gameState === 'results' ? 'Nova Rodada' : 'Iniciar Rodada'}
                     </Button>
                     <CategoryManager
                       categories={gameState.categories}

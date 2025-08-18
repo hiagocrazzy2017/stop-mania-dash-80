@@ -100,7 +100,9 @@ export const VotingModal = ({ isOpen, votingData, onVote, currentPlayerId, curre
         <div className="space-y-6">
           {CATEGORIES.map((category) => {
             const categoryData = votingData[category.id] || {};
-            const playersToVote = Object.keys(categoryData).filter(pid => pid !== currentPlayerId);
+            const playersToVote = Object.keys(categoryData).filter(pid => 
+              pid !== currentPlayerId && categoryData[pid]?.answer?.trim()
+            );
             
             if (playersToVote.length === 0) return null;
 
